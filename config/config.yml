@@ -1,0 +1,64 @@
+# notion-os config — committed, non-secret (§2.3). Secrets live in
+# ~/.config/notion-os/{garmin.env, notion.env} (700/600), never here.
+
+notion:
+  # Pinned per §2.3 — bump deliberately, never float. 2022-06-28 is the
+  # long-stable version the raw-requests lib (Session 3) is written against.
+  version: "2022-06-28"
+  # Filled in Session 1 when the five databases exist. null = not yet created.
+  db_ids:
+    people: null
+    interactions: null
+    weekly_log: null
+    transactions: null
+    monthly_money: null
+
+paths:
+  vault: /Users/connorchapman/Documents/Obsidian/Vault
+  garmin_sync: /Users/connorchapman/Documents/Obsidian/Vault/Garmin/_sync
+  # Shortcuts iCloud container (§2.1.8) — install.sh effect-asserts real
+  # launchd writability of this exact path (Session 9).
+  shortcuts_container: /Users/connorchapman/Library/Mobile Documents/iCloud~is~workflow~my~workflows/Documents
+
+health:
+  pt_type_allowlist: [strength_training]
+
+money:
+  deadman_window_months: 12          # §2.8.3 — 1-year bank-export reach
+  export_horizon_warn_d: 300         # §2.8.3 — urgent wording threshold
+  system_start_month: null           # set at the first sitting (Session 6) — the dead-man's cold-start floor
+
+notifications:                       # §2.8.1 — the ratified cadence
+  failure_quiet_runs: 2              # quiet for 2 consecutive, notify on the 3rd
+  auth_failure_immediate: true       # auth skips the grace entirely
+  auth_renotify_days: 3              # while auth_dead, re-notify every 3rd day
+  deadman_max_per_week: 1            # one nag per week, no stacking
+  vault_stale_warn_d: 7              # rollup watchdog
+  daily_state_stale_warn_d: 3        # weekly job watching the daily
+  weekly_state_stale_warn_d: 9       # daily job watching both weekly jobs
+
+# Per-account parser profiles (§2.1.5). fingerprint/date_format/sign_multiplier
+# are written by `inspect` on human confirm (Session 5) — NEVER hand-edited,
+# never guessed. confirmed: false blocks any import for that account.
+parser_profiles:
+  rbc-chequing:
+    account: RBC Chequing
+    drop_name: rbc-chequing.csv
+    fingerprint: null
+    date_format: null
+    sign_multiplier: null
+    confirmed: false
+  rbc-cc:
+    account: RBC CC
+    drop_name: rbc-cc.csv
+    fingerprint: null
+    date_format: null
+    sign_multiplier: null
+    confirmed: false
+  scotia-visa:
+    account: Scotia Visa
+    drop_name: scotia-visa.csv
+    fingerprint: null
+    date_format: null
+    sign_multiplier: null
+    confirmed: false

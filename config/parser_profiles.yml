@@ -1,0 +1,30 @@
+# MACHINE-WRITTEN by `import_transactions.py inspect` on human confirm.
+# Do not hand-edit — sign conventions are confirmed against a real export,
+# never typed in (§2.1.5). confirmed: false blocks imports for that account.
+rbc-chequing:
+  account: RBC Chequing
+  drop_name: rbc-chequing.csv
+  shape: null
+  fingerprint: null
+  date_format: null
+  sign_multiplier: null
+  account_type: null
+  confirmed: false
+rbc-cc:
+  account: RBC CC
+  drop_name: rbc-cc.csv
+  shape: null
+  fingerprint: null
+  date_format: null
+  sign_multiplier: null
+  account_type: null
+  confirmed: false
+scotia-visa:
+  account: Scotia Visa
+  drop_name: scotia-visa.csv
+  shape: null
+  fingerprint: null
+  date_format: null
+  sign_multiplier: null
+  account_type: null
+  confirmed: false

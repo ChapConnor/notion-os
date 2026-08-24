@@ -5,14 +5,13 @@ notion:
   # Pinned per §2.3 — bump deliberately, never float. 2022-06-28 is the
   # long-stable version the raw-requests lib (Session 3) is written against.
   version: "2022-06-28"
-  # Fetched via API search 2026-08-24 after Session 1. monthly_money pending —
-  # DB not yet visible to notion-os-mac (create/connect it, then re-fetch).
+  # Fetched via API search 2026-08-24 after Session 1; schemas API-verified.
   db_ids:
     people: e4c08f72-f49b-420b-8ab9-8e5940009f51
     interactions: ca99c403-cdfa-4cae-b8a7-222d3a87614a
     weekly_log: fdd8f5fc-d3ee-4c8e-9d9c-5f887211635c
     transactions: 8366a5c8-9dee-433f-b0a7-7ad200af18e1
-    monthly_money: null
+    monthly_money: 41710627-804a-4a3b-b033-8067307b8fff
 
 paths:
   vault: /Users/connorchapman/Documents/Obsidian/Vault
@@ -38,28 +37,6 @@ notifications:                       # §2.8.1 — the ratified cadence
   daily_state_stale_warn_d: 3        # weekly job watching the daily
   weekly_state_stale_warn_d: 9       # daily job watching both weekly jobs
 
-# Per-account parser profiles (§2.1.5). fingerprint/date_format/sign_multiplier
-# are written by `inspect` on human confirm (Session 5) — NEVER hand-edited,
-# never guessed. confirmed: false blocks any import for that account.
-parser_profiles:
-  rbc-chequing:
-    account: RBC Chequing
-    drop_name: rbc-chequing.csv
-    fingerprint: null
-    date_format: null
-    sign_multiplier: null
-    confirmed: false
-  rbc-cc:
-    account: RBC CC
-    drop_name: rbc-cc.csv
-    fingerprint: null
-    date_format: null
-    sign_multiplier: null
-    confirmed: false
-  scotia-visa:
-    account: Scotia Visa
-    drop_name: scotia-visa.csv
-    fingerprint: null
-    date_format: null
-    sign_multiplier: null
-    confirmed: false
+# Per-account parser profiles (§2.1.5) live in config/parser_profiles.yml —
+# machine-written by the `inspect` subcommand on human confirm, NEVER
+# hand-edited, never guessed. confirmed: false blocks imports per account.

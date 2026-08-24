@@ -1,0 +1,140 @@
+# categories.yml — the taxonomy + ordered first-match-wins rules (§2.1.5).
+# Seeded from personal_finance_v2.xlsx "Keyword Rules" (63 rules) remapped to
+# the §1.1.4 taxonomy. git history of this file = the taxonomy changelog.
+#
+# Rule guards (all optional): sign: "+"/"-" (row amount), account: exact
+# Account select name, min_abs/max_abs: absolute amount bounds.
+# ORDER IS LOAD-BEARING: the loader hard-fails if an earlier rule shadows a
+# later one (e.g. TRANSFER above E-TRANSFER IN), and on any category not in
+# the taxonomy below. No match → Uncategorized, never a guess.
+
+categories:
+  - Groceries
+  - Dining
+  - Transport
+  - Housing
+  - Phone
+  - Subscriptions
+  - Health
+  - Golf
+  - Gifts
+  - Travel
+  - Shopping
+  - Fees
+  - Cash
+  - Misc
+  - Uncategorized
+  - "Income — Salary"
+  - "Income — Other"
+  - "Contribution — TFSA"
+  - "Contribution — RRSP"
+  - "Contribution — FHSA"
+  - "Contribution — Taxable"
+  - "Transfer — CC Payment"
+  - "Transfer — Internal"
+
+rules:
+  # --- income (E-TRANSFER IN sign-guarded, ordered ABOVE the TRANSFER rule —
+  #     the load-bearing pair; ordered wrong, every incoming e-transfer
+  #     silently vanishes from Income) -----------------------------------
+  - { match: "PAYROLL",        category: "Income — Salary", sign: "+" }
+  - { match: "PAY/PAY",        category: "Income — Salary", sign: "+" }
+  - { match: "DIRECT DEP",     category: "Income — Salary", sign: "+" }
+  - { match: "E-TRANSFER IN",  category: "Income — Other",  sign: "+" }
+
+  # --- transfers (the double-counting firewall feeds on these) ----------
+  - { match: "PAYMENT - THANK YOU", category: "Transfer — CC Payment" }
+  - { match: "PAYMENT THANK YOU",   category: "Transfer — CC Payment" }
+  - { match: "PYMT - THANK YOU",    category: "Transfer — CC Payment" }
+
+  # --- contributions (outflow-guarded; shelter keywords ABOVE brokerage
+  #     descriptors so "RBC DIRECT INVESTING TFSA" lands on the shelter;
+  #     REVIEW at the first sitting per §2.8.4) --------------------------
+  - { match: "FHSA",                 category: "Contribution — FHSA",    sign: "-" }
+  - { match: "RRSP",                 category: "Contribution — RRSP",    sign: "-" }
+  - { match: "TFSA",                 category: "Contribution — TFSA",    sign: "-" }
+  - { match: "RBC DIRECT INVESTING", category: "Contribution — Taxable", sign: "-" }
+  - { match: "INVESTEASE",           category: "Contribution — Taxable", sign: "-" }
+  - { match: "WEALTHSIMPLE",         category: "Contribution — Taxable", sign: "-" }
+  - { match: "QUESTRADE",            category: "Contribution — Taxable", sign: "-" }
+  - { match: "QTRADE",               category: "Contribution — Taxable", sign: "-" }
+
+  # --- internal transfers (after E-TRANSFER IN and contributions) -------
+  - { match: "E-TRANSFER",  category: "Transfer — Internal" }
+  - { match: "TRANSFER",    category: "Transfer — Internal" }
+
+  # --- housing ----------------------------------------------------------
+  - { match: "RENT",      category: Housing }
+  - { match: "BC HYDRO",  category: Housing }
+  - { match: "HYDRO",     category: Housing }
+  - { match: "FORTIS",    category: Housing }
+  - { match: "INSURANCE", category: Housing }
+  - { match: "STRATA",    category: Housing }
+
+  # --- phone/internet (moved off Housing per §2.8.4) --------------------
+  - { match: "SHAW",   category: Phone }
+  - { match: "TELUS",  category: Phone }
+  - { match: "ROGERS", category: Phone }
+
+  # --- groceries --------------------------------------------------------
+  - { match: "LOBLAWS",     category: Groceries }
+  - { match: "SAVE-ON",     category: Groceries }
+  - { match: "SAFEWAY",     category: Groceries }
+  - { match: "SUPERSTORE",  category: Groceries }
+  - { match: "WHOLE FOODS", category: Groceries }
+  - { match: "WALMART",     category: Groceries }
+  - { match: "COSTCO",      category: Groceries }
+  - { match: "T&T",         category: Groceries }
+
+  # --- dining (UBEREATS above the Transport UBER rule — shadow pair) ----
+  - { match: "UBEREATS",      category: Dining }
+  - { match: "UBER EATS",     category: Dining }
+  - { match: "MCDONALD",      category: Dining }
+  - { match: "TIM HORTONS",   category: Dining }
+  - { match: "STARBUCKS",     category: Dining }
+  - { match: "DOORDASH",      category: Dining }
+  - { match: "SKIP THE DISH", category: Dining }
+  - { match: "RESTAURANT",    category: Dining }
+  - { match: "PIZZA",         category: Dining }
+  - { match: "SUSHI",         category: Dining }
+
+  # --- transport --------------------------------------------------------
+  - { match: "TRANSLINK", category: Transport }
+  - { match: "COMPASS",   category: Transport }
+  - { match: "UBER",      category: Transport }
+  - { match: "LYFT",      category: Transport }
+  - { match: "ICBC",      category: Transport }
+  - { match: "ESSO",      category: Transport }
+  - { match: "PETRO",     category: Transport }
+  - { match: "SHELL",     category: Transport }
+  - { match: "PARKING",   category: Transport }
+  - { match: "IMPARK",    category: Transport }
+
+  # --- health (Shoppers/London Drugs → Health = §2.8.4 seed default) ----
+  - { match: "PHARMASAVE",   category: Health }
+  - { match: "SHOPPERS",     category: Health }
+  - { match: "REXALL",       category: Health }
+  - { match: "LONDON DRUGS", category: Health }
+  - { match: "GYM",          category: Health }
+  - { match: "GOODLIFE",     category: Health }
+  - { match: "STEVE NASH",   category: Health }
+  - { match: "CLINIC",       category: Health }
+  - { match: "DENTAL",       category: Health }
+  - { match: "OPTOMETRIST",  category: Health }
+
+  # --- golf -------------------------------------------------------------
+  - { match: "GOLF", category: Golf }
+
+  # --- subscriptions / entertainment one-offs (Cineplex/Ticketmaster →
+  #     Misc per the plan's §2.8.4 review line) --------------------------
+  - { match: "NETFLIX",      category: Subscriptions }
+  - { match: "SPOTIFY",      category: Subscriptions }
+  - { match: "APPLE.COM",    category: Subscriptions }
+  - { match: "GOOGLE PLAY",  category: Subscriptions }
+  - { match: "AMAZON PRIME", category: Subscriptions }
+  - { match: "CINEPLEX",     category: Misc }
+  - { match: "TICKETMASTER", category: Misc }
+  - { match: "STEAM",        category: Misc }
+
+  # --- cash -------------------------------------------------------------
+  - { match: "ATM WITHDRAWAL", category: Cash, sign: "-" }

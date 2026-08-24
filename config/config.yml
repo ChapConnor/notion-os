@@ -5,12 +5,13 @@ notion:
   # Pinned per §2.3 — bump deliberately, never float. 2022-06-28 is the
   # long-stable version the raw-requests lib (Session 3) is written against.
   version: "2022-06-28"
-  # Filled in Session 1 when the five databases exist. null = not yet created.
+  # Fetched via API search 2026-08-24 after Session 1. monthly_money pending —
+  # DB not yet visible to notion-os-mac (create/connect it, then re-fetch).
   db_ids:
-    people: null
-    interactions: null
-    weekly_log: null
-    transactions: null
+    people: e4c08f72-f49b-420b-8ab9-8e5940009f51
+    interactions: ca99c403-cdfa-4cae-b8a7-222d3a87614a
+    weekly_log: fdd8f5fc-d3ee-4c8e-9d9c-5f887211635c
+    transactions: 8366a5c8-9dee-433f-b0a7-7ad200af18e1
     monthly_money: null
 
 paths:

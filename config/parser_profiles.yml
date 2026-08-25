@@ -1,30 +1,32 @@
 # MACHINE-WRITTEN by `import_transactions.py inspect` on human confirm.
-# Do not hand-edit — sign conventions are confirmed against a real export,
-# never typed in (§2.1.5). confirmed: false blocks imports for that account.
-rbc-chequing:
-  account: RBC Chequing
-  drop_name: rbc-chequing.csv
-  shape: null
-  fingerprint: null
-  date_format: null
-  sign_multiplier: null
-  account_type: null
-  confirmed: false
+# Do not hand-edit — sign conventions are confirmed against a real
+# export, never typed in (§2.1.5).
 rbc-cc:
   account: RBC CC
+  account_type: Visa
+  confirmed: true
+  date_format: '%m/%d/%Y'
   drop_name: rbc-cc.csv
-  shape: null
-  fingerprint: null
-  date_format: null
-  sign_multiplier: null
-  account_type: null
-  confirmed: false
+  fingerprint: Account Type,Account Number,Transaction Date,Cheque Number,Description
+    1,Description 2,CAD$,USD$
+  shape: rbc
+  sign_multiplier: 1
+rbc-chequing:
+  account: RBC Chequing
+  account_type: Chequing
+  confirmed: true
+  date_format: '%m/%d/%Y'
+  drop_name: rbc-chequing.csv
+  fingerprint: Account Type,Account Number,Transaction Date,Cheque Number,Description
+    1,Description 2,CAD$,USD$
+  shape: rbc
+  sign_multiplier: 1
 scotia-visa:
   account: Scotia Visa
-  drop_name: scotia-visa.csv
-  shape: null
-  fingerprint: null
-  date_format: null
-  sign_multiplier: null
   account_type: null
-  confirmed: false
+  confirmed: true
+  date_format: '%m/%d/%Y'
+  drop_name: scotia-visa.csv
+  fingerprint: Filter,Date,Description,Sub-description,Status,Type of Transaction,Amount
+  shape: scotia-7col
+  sign_multiplier: -1

@@ -77,11 +77,13 @@ def main() -> int:
     # 3.5 The real 2026 Scotia 7-col shape: direction column, pending skip.
     from parsers import parse_file
 
+    # Real portal quirks reproduced: debits positive AND credits negative —
+    # the direction column is the authority, magnitude from abs().
     scotia = (
         "Filter,Date,Description,Sub-description,Status,Type of Transaction,Amount\n"
         '"Current and last statement period","2026-08-24","golf town #54",,"pending","Debit","498.36"\n'
         '"Current and last statement period","2026-08-20","NETFLIX.COM",,"posted","Debit","20.99"\n'
-        '"Current and last statement period","2026-08-19","PAYMENT - THANK YOU",,"posted","Credit","840.00"\n'
+        '"Current and last statement period","2026-08-19","royal bank of canada",,"posted","Credit","-840.00"\n'
     )
     with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as f:
         f.write(scotia)

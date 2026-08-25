@@ -327,12 +327,16 @@ def cmd_import(args) -> int:
     client = napi.Notion()
     touched: set[str] = set()
     cc_total = 0.0
+    aborted: list[str] = []
     for path, key, profile in drops:
         try:
             result = import_one(client, ids, ruleset, path, key, profile, args.yes)
         except ParserAbort as exc:
+            # The FILE is the abort unit — nothing from it lands, but other
+            # files' rows still deserve their re-aggregation below.
             print(f"\nABORTED (whole file, nothing written): {exc}")
-            return 1
+            aborted.append(path.name)
+            continue
         if result:
             touched.update(result["months"])
             cc_total += result["cc_sum"]
@@ -346,6 +350,9 @@ def cmd_import(args) -> int:
             f"(>|${CC_MISMATCH_WARN}|) — card and chequing sides may not both "
             f"be in this import window. Transfers still net out of aggregates."
         )
+    if aborted:
+        print(f"import finished WITH ABORTED FILE(S): {', '.join(aborted)} — fix and re-run.")
+        return 1
     print("import complete.")
     return 0
 
@@ -382,7 +389,7 @@ def cmd_inspect(args) -> int:
     from parsers import _read_lines, _split  # noqa: PLC0415
 
     lines = _read_lines(path)
-    body = lines[1:] if shape in ("rbc", "scotia-5col") else lines
+    body = lines[1:] if shape in ("rbc", "scotia-5col", "scotia-7col") else lines
     print(f"file:        {path}")
     print(f"shape:       {shape}")
     print(f"fingerprint: {fingerprint}")

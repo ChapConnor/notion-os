@@ -260,7 +260,10 @@ def _parse_row(
         direction = tx_type.strip().lower()
         if d is None or amount is None or direction not in ("debit", "credit"):
             return None
-        signed = amount if direction == "credit" else -amount
+        # The direction column is the authority; magnitude from abs(). The
+        # real portal writes debits positive AND credits negative — abs +
+        # direction normalizes both quirks to inflow + / outflow −.
+        signed = abs(amount) if direction == "credit" else -abs(amount)
         return Row(
             raw_line=line,
             raw_date=raw_date.strip(),

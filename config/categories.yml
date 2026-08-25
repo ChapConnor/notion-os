@@ -46,6 +46,9 @@ rules:
   - { match: "PAYMENT - THANK YOU", category: "Transfer — CC Payment" }
   - { match: "PAYMENT THANK YOU",   category: "Transfer — CC Payment" }
   - { match: "PYMT - THANK YOU",    category: "Transfer — CC Payment" }
+  # Scotia writes the incoming card payment as the paying bank's name
+  # (observed 2026-08: "royal bank of canada", Credit) — account+sign guarded.
+  - { match: "ROYAL BANK OF CANADA", category: "Transfer — CC Payment", account: "Scotia Visa", sign: "+" }
 
   # --- contributions (outflow-guarded; shelter keywords ABOVE brokerage
   #     descriptors so "RBC DIRECT INVESTING TFSA" lands on the shelter;

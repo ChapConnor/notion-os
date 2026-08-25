@@ -96,9 +96,27 @@ def read_tx(page: dict) -> dict:
 
 # ------------------------------------------------------------ re-aggregation
 
-def re_aggregate_month(client: napi.Notion, ids: dict, month: str, dry: bool = False) -> dict:
-    """Fresh post-write query → Monthly Money upsert (script fields only)."""
+def re_aggregate_month(
+    client: napi.Notion, ids: dict, month: str, dry: bool = False, min_rows: int = 0
+) -> dict:
+    """Fresh post-write query → Monthly Money upsert (script fields only).
+
+    min_rows guards against Notion's eventual-consistency lag: when the query
+    returns fewer rows than this run just wrote for the month, wait and
+    re-query instead of silently understating the aggregates.
+    """
+    import time
+
     txs = [read_tx(p) for p in client.query_db(ids["transactions"], filter=month_filter(month))]
+    for attempt in range(3):
+        if len(txs) >= min_rows:
+            break
+        print(
+            f"  {month}: query shows {len(txs)} rows but this run wrote ≥{min_rows} "
+            f"— index lag, retrying in 5s ({attempt + 1}/3)"
+        )
+        time.sleep(5)
+        txs = [read_tx(p) for p in client.query_db(ids["transactions"], filter=month_filter(month))]
     income = spend = 0.0
     contrib: dict[str, float] = {"TFSA": 0.0, "RRSP": 0.0, "FHSA": 0.0, "Taxable": 0.0}
     for t in txs:
@@ -311,7 +329,8 @@ def import_one(
         f"  {path.parent.name}/{path.name} [{batch_id}]: created={created} "
         f"skipped={skipped} updated={updated} uncategorized={uncategorized}"
     )
-    return {"months": months, "cc_sum": cc_sum, "created": created}
+    month_counts = Counter(r.date.strftime("%Y-%m") for _, r in hashed)
+    return {"months": months, "cc_sum": cc_sum, "created": created, "month_counts": month_counts}
 
 
 def cmd_import(args) -> int:
@@ -326,6 +345,7 @@ def cmd_import(args) -> int:
     IMPORT_STATE.mkdir(parents=True, exist_ok=True)
     client = napi.Notion()
     touched: set[str] = set()
+    expected_rows: Counter = Counter()
     cc_total = 0.0
     aborted: list[str] = []
     for path, key, profile in drops:
@@ -340,8 +360,9 @@ def cmd_import(args) -> int:
         if result:
             touched.update(result["months"])
             cc_total += result["cc_sum"]
+            expected_rows.update(result["month_counts"])
     for m in sorted(touched):
-        re_aggregate_month(client, ids, m)
+        re_aggregate_month(client, ids, m, min_rows=expected_rows.get(m, 0))
     if touched:
         run_export(client, ids)
     if abs(cc_total) > CC_MISMATCH_WARN:

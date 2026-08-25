@@ -26,7 +26,7 @@ health:
 money:
   deadman_window_months: 12          # §2.8.3 — 1-year bank-export reach
   export_horizon_warn_d: 300         # §2.8.3 — urgent wording threshold
-  system_start_month: null           # set at the first sitting (Session 6) — the dead-man's cold-start floor
+  system_start_month: "2026-08"      # set at the first sitting 2026-08-24 — the dead-man's cold-start floor
 
 notifications:                       # §2.8.1 — the ratified cadence
   failure_quiet_runs: 2              # quiet for 2 consecutive, notify on the 3rd

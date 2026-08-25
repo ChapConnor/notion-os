@@ -29,4 +29,4 @@ scotia-visa:
   drop_name: scotia-visa.csv
   fingerprint: Filter,Date,Description,Sub-description,Status,Type of Transaction,Amount
   shape: scotia-7col
-  sign_multiplier: -1
+  sign_multiplier: 1

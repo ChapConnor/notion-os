@@ -88,10 +88,15 @@ rules:
   - { match: "WALMART",     category: Groceries }
   - { match: "COSTCO",      category: Groceries }
   - { match: "T&T",         category: Groceries }
+  - { match: "PEMBERTON VALLEY SUPER", category: Groceries }
 
   # --- dining (UBEREATS above the Transport UBER rule — shadow pair) ----
   - { match: "UBEREATS",      category: Dining }
   - { match: "UBER EATS",     category: Dining }
+  # promoted from the first real Uncategorized queue, 2026-08-24:
+  - { match: "LS THE LIDO",           category: Dining }
+  - { match: "SQ *THE SAVARY ISLAND", category: Dining }
+  - { match: "SQ *BAR TARTARE",       category: Dining }
   - { match: "MCDONALD",      category: Dining }
   - { match: "TIM HORTONS",   category: Dining }
   - { match: "STARBUCKS",     category: Dining }
@@ -112,6 +117,9 @@ rules:
   - { match: "SHELL",     category: Transport }
   - { match: "PARKING",   category: Transport }
   - { match: "IMPARK",    category: Transport }
+  - { match: "WESTMOUNT CHE", category: Transport }
+  - { match: "BCF - ",    category: Travel }
+  - { match: "PURCHASE INTEREST", category: Fees }
 
   # --- health (Shoppers/London Drugs → Health = §2.8.4 seed default) ----
   - { match: "PHARMASAVE",   category: Health }
@@ -138,6 +146,10 @@ rules:
   - { match: "CINEPLEX",     category: Misc }
   - { match: "TICKETMASTER", category: Misc }
   - { match: "STEAM",        category: Misc }
+
+  # --- shopping (AMAZON deliberately after AMAZON PRIME) ----------------
+  - { match: "AMAZON", category: Shopping }
+  - { match: "INDIGO", category: Shopping }
 
   # --- cash -------------------------------------------------------------
   - { match: "ATM WITHDRAWAL", category: Cash, sign: "-" }

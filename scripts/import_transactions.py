@@ -398,52 +398,43 @@ def cmd_inspect(args) -> int:
     for line in body[:5]:
         print(f"  {line[:110]}")
     cols = [_split(ln) for ln in body]
-    if shape == "rbc":
-        dates = [c[2] for c in cols[:20]]
-        amounts = [(parse_amount(c[6]) or 0.0, c) for c in cols]
-        acct_types = sorted({c[0].strip() for c in cols})
-        print(f"Account Type values: {acct_types}")
-    elif shape == "scotia-3col":
-        dates = [c[0] for c in cols[:20]]
-        amounts = [(parse_amount(c[2]) or 0.0, c) for c in cols]
-        acct_types = []
-    elif shape == "scotia-7col":
-        dates = [c[1] for c in cols[:20]]
-        amounts = [
-            (
-                (parse_amount(c[6]) or 0.0)
-                * (1 if c[5].strip().lower() == "credit" else -1),
-                c,
-            )
-            for c in cols
-            if len(c) == 7
-        ]
-        acct_types = []
-        pending = sum(1 for c in cols if len(c) == 7 and c[4].strip().lower() == "pending")
-        if pending:
-            print(f"note: {pending} pending row(s) — the import skips these until they post")
-    else:
-        dates = [c[0] for c in cols[:20]]
-        amounts = [((parse_amount(c[3]) or 0.0) - (parse_amount(c[2]) or 0.0), c) for c in cols]
-        acct_types = []
-    fmt = _infer_date_format(dates) or "%m/%d/%Y"
-    biggest_pos = max(amounts, key=lambda x: x[0])
-    biggest_neg = min(amounts, key=lambda x: x[0])
-    print(f"inferred date format: {fmt}  (verify against the samples above)")
-    print(f"largest inflow  row as-parsed: {biggest_pos[0]:+,.2f}  {biggest_pos[1]}")
-    print(f"largest outflow row as-parsed: {biggest_neg[0]:+,.2f}  {biggest_neg[1]}")
-    print(
-        "\nSign check — the pipeline stores inflow + / outflow − from the "
-        "account's own perspective. Look at a row you KNOW (payroll deposit or "
-        "a purchase)."
-    )
-    ans = input("Do purchases/outflows show as NEGATIVE in the rows above? [y/n] ").strip().lower()
-    sign = 1 if ans == "y" else -1
     acct_type = None
     if shape == "rbc":
+        acct_types = sorted({c[0].strip() for c in cols if c})
+        print(f"Account Type values: {acct_types}")
         if len(acct_types) != 1:
             raise SystemExit(f"mixed Account Type values {acct_types} — split the export per account")
         acct_type = acct_types[0]
+    date_idx = {"rbc": 2, "scotia-3col": 0, "scotia-5col": 0, "scotia-7col": 1}[shape]
+    dates = [c[date_idx] for c in cols[:20] if len(c) > date_idx]
+    fmt = _infer_date_format(dates)
+    if fmt is None:
+        raise SystemExit(
+            "could not infer a date format from the sample rows — is this "
+            "file what you think it is?"
+        )
+    print(f"inferred date format: {fmt}  (verify against the samples above)")
+
+    # Preview through the REAL parser at multiplier 1 — preview and import
+    # share one code path, so they can never disagree again.
+    trial = {
+        "confirmed": True, "shape": shape, "fingerprint": fingerprint,
+        "date_format": fmt, "sign_multiplier": 1, "account_type": acct_type,
+    }
+    parsed = parse_file(path, args.account, trial)
+    print("\nrows exactly as the importer would store them:")
+    for r in parsed[:5]:
+        print(f"  {r.date}  {r.amount:>+12,.2f}  {r.description[:60]}")
+    hi = max(parsed, key=lambda r: r.amount)
+    lo = min(parsed, key=lambda r: r.amount)
+    print(f"  largest inflow : {hi.date}  {hi.amount:>+12,.2f}  {hi.description[:60]}")
+    print(f"  largest outflow: {lo.date}  {lo.amount:>+12,.2f}  {lo.description[:60]}")
+    print(
+        "\nSign check — the pipeline stores inflow + (deposits, payments "
+        "received) and outflow − (purchases). Judge the rows ABOVE, as shown."
+    )
+    ans = input("Are the signs above correct as shown? [y/n] ").strip().lower()
+    sign = 1 if ans == "y" else -1
     print(
         f"\nProposed profile for {args.account!r}: shape={shape} "
         f"date_format={fmt} sign_multiplier={sign} account_type={acct_type}"
@@ -518,7 +509,9 @@ def cmd_repair_batch(args) -> int:
     print(f"{len(pages)} row(s) in batch {args.batch_id}")
     if not args.delete:
         return 0
-    if input(f"Archive all {len(pages)} rows to Notion trash (30-day recoverable)? [y/n] ").lower() != "y":
+    if not args.yes and input(
+        f"Archive all {len(pages)} rows to Notion trash (30-day recoverable)? [y/n] "
+    ).lower() != "y":
         return 1
     for p in pages:
         client.request("PATCH", f"/pages/{p['id']}", {"archived": True})
@@ -553,6 +546,7 @@ def main() -> int:
     p_rb.add_argument("batch_id")
     p_rb.add_argument("--list", action="store_true")
     p_rb.add_argument("--delete", action="store_true")
+    p_rb.add_argument("--yes", action="store_true", help="skip the archive confirm")
     args = parser.parse_args()
 
     cmd = args.cmd or "import"

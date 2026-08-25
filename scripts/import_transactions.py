@@ -400,6 +400,21 @@ def cmd_inspect(args) -> int:
         dates = [c[0] for c in cols[:20]]
         amounts = [(parse_amount(c[2]) or 0.0, c) for c in cols]
         acct_types = []
+    elif shape == "scotia-7col":
+        dates = [c[1] for c in cols[:20]]
+        amounts = [
+            (
+                (parse_amount(c[6]) or 0.0)
+                * (1 if c[5].strip().lower() == "credit" else -1),
+                c,
+            )
+            for c in cols
+            if len(c) == 7
+        ]
+        acct_types = []
+        pending = sum(1 for c in cols if len(c) == 7 and c[4].strip().lower() == "pending")
+        if pending:
+            print(f"note: {pending} pending row(s) — the import skips these until they post")
     else:
         dates = [c[0] for c in cols[:20]]
         amounts = [((parse_amount(c[3]) or 0.0) - (parse_amount(c[2]) or 0.0), c) for c in cols]

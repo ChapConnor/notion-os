@@ -74,6 +74,30 @@ def main() -> int:
     assert c("SOME NEW MERCHANT", -12) == "Uncategorized"
     print("  ok  13 categorization spot checks")
 
+    # 3.5 The real 2026 Scotia 7-col shape: direction column, pending skip.
+    from parsers import parse_file
+
+    scotia = (
+        "Filter,Date,Description,Sub-description,Status,Type of Transaction,Amount\n"
+        '"Current and last statement period","2026-08-24","golf town #54",,"pending","Debit","498.36"\n'
+        '"Current and last statement period","2026-08-20","NETFLIX.COM",,"posted","Debit","20.99"\n'
+        '"Current and last statement period","2026-08-19","PAYMENT - THANK YOU",,"posted","Credit","840.00"\n'
+    )
+    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as f:
+        f.write(scotia)
+        sp = Path(f.name)
+    profile = {
+        "confirmed": True, "shape": "scotia-7col",
+        "fingerprint": "Filter,Date,Description,Sub-description,Status,Type of Transaction,Amount",
+        "date_format": "%Y-%m-%d", "sign_multiplier": 1, "account_type": None,
+    }
+    parsed = parse_file(sp, "scotia-visa", profile)
+    sp.unlink()
+    assert len(parsed) == 2, f"pending row not skipped: {len(parsed)}"
+    assert parsed[0].amount == -20.99 and parsed[0].description == "NETFLIX.COM"
+    assert parsed[1].amount == +840.00
+    print("  ok  scotia-7col: debit→negative, credit→positive, pending skipped")
+
     # 4. parse_amount ports the lighthouse lessons.
     assert parse_amount("$1,234.56") == 1234.56
     assert parse_amount("(1,234.56)") == -1234.56

@@ -31,7 +31,17 @@ RBC_COLUMNS = [
     "Description 1", "Description 2", "CAD$", "USD$",
 ]
 SCOTIA_5COL_COLUMNS = ["Date", "Description", "Debit", "Credit", "Balance"]
+# The shape the real 2026 Scotia portal actually emits (found at first contact,
+# 2026-08-24): unsigned Amount + Debit/Credit direction column + Status.
+SCOTIA_7COL_COLUMNS = [
+    "Filter", "Date", "Description", "Sub-description", "Status",
+    "Type of Transaction", "Amount",
+]
 MAX_UNPARSEABLE_FRACTION = 0.02
+
+#: sentinel for rows deliberately skipped (e.g. Scotia "pending" — a pending
+#: row can change when it posts, which would break hash stability).
+SKIPPED = object()
 
 _AMOUNT_JUNK = re.compile(r"[$€£]|CAD|USD|\s")
 
@@ -102,12 +112,14 @@ def compute_fingerprint(path: Path) -> tuple[str, str]:
         return "rbc", lines[0].strip()
     if first_cols == SCOTIA_5COL_COLUMNS:
         return "scotia-5col", lines[0].strip()
+    if first_cols == SCOTIA_7COL_COLUMNS:
+        return "scotia-7col", lines[0].strip()
     if len(first_cols) == 3 and _parse_any_date(first_cols[0]):
         return "scotia-3col", f"headerless:3col"
     raise ParserAbort(
-        f"{path.name}: unrecognized format — first line is neither the RBC "
-        f"8-column header, the Scotia Date/Description/Debit/Credit/Balance "
-        f"header, nor a headerless 3-column row. Run `inspect` on it."
+        f"{path.name}: unrecognized format — first line matches none of the "
+        f"known shapes (RBC 8-col, Scotia 5-col, Scotia 7-col, headerless "
+        f"3-col). Run `inspect` on it."
     )
 
 
@@ -147,18 +159,28 @@ def parse_file(path: Path, key: str, profile: dict) -> list[Row]:
             f"Re-run `inspect` to confirm the new format (runbook 'CSV format drift')."
         )
     lines = _read_lines(path)
-    body = lines[1:] if shape in ("rbc", "scotia-5col") else lines
+    headered = shape in ("rbc", "scotia-5col", "scotia-7col")
+    body = lines[1:] if headered else lines
     fmt = profile["date_format"]
     sign = float(profile["sign_multiplier"])
     rows: list[Row] = []
     bad: list[str] = []
-    for i, line in enumerate(body, 2 if shape in ("rbc", "scotia-5col") else 1):
+    skipped_pending = 0
+    for i, line in enumerate(body, 2 if headered else 1):
         cols = _split(line)
         parsed = _parse_row(shape, cols, line, i, fmt, sign, key, profile, path)
+        if parsed is SKIPPED:
+            skipped_pending += 1
+            continue
         if parsed is None:
             bad.append(f"line {i}: {line[:80]}")
             continue
         rows.append(parsed)
+    if skipped_pending:
+        print(
+            f"  {path.name}: skipped {skipped_pending} pending row(s) — they "
+            f"import once posted (hash stability)"
+        )
     if not rows:
         raise ParserAbort(f"{path.name}: zero parseable rows")
     if len(bad) / (len(rows) + len(bad)) > MAX_UNPARSEABLE_FRACTION:
@@ -180,7 +202,7 @@ def _parse_row(
     key: str,
     profile: dict,
     path: Path,
-) -> Row | None:
+) -> "Row | None | object":
     if shape == "rbc":
         if len(cols) != 8:
             return None
@@ -226,6 +248,27 @@ def _parse_row(
             date=d,
             amount=round(amount * sign, 2),
             description=_normalize_description(desc),
+        )
+    if shape == "scotia-7col":
+        if len(cols) != 7:
+            return None
+        _filter, raw_date, desc, sub_desc, status, tx_type, raw_amt = cols
+        if status.strip().lower() == "pending":
+            return SKIPPED
+        d = _parse_date(raw_date, fmt, path, line_no)
+        amount = parse_amount(raw_amt)
+        direction = tx_type.strip().lower()
+        if d is None or amount is None or direction not in ("debit", "credit"):
+            return None
+        signed = amount if direction == "credit" else -amount
+        return Row(
+            raw_line=line,
+            raw_date=raw_date.strip(),
+            raw_amount=raw_amt.strip(),
+            raw_description=_normalize_description(desc, sub_desc),
+            date=d,
+            amount=round(signed * sign, 2),
+            description=_normalize_description(desc, sub_desc),
         )
     if shape == "scotia-5col":
         if len(cols) != 5:
